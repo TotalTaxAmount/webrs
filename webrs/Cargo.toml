@@ -1,0 +1,17 @@
+[package]
+name = "webrs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flate2 = "1.0"
+log = "0.4"
+mime_guess = "2.0.5"
+pretty_env_logger = "0.5.0"
+uid = "0.1.8"
+zstd = "0.13.2"
+brotli = "7.0.0"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+rand = "0.8.5"
+sha2 = "0.10.8"
