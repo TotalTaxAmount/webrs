@@ -2,15 +2,18 @@ pub mod api;
 pub mod handlers;
 
 use core::{fmt, str};
-use std::{
-  collections::HashMap, fmt::{Display, Error}, net::SocketAddr, sync::Arc, time::Duration
-};
+use std::{collections::HashMap, fmt::Display, net::SocketAddr, sync::Arc, time::Duration};
 
 use api::Method;
 use handlers::Handlers;
 use log::{error, info, trace, warn};
 use serde_json::{to_string, Value};
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{tcp::WriteHalf, TcpListener, TcpStream}, sync::Mutex, time::sleep};
+use tokio::{
+  io::{AsyncReadExt, AsyncWriteExt},
+  net::{tcp::WriteHalf, TcpListener, TcpStream},
+  sync::Mutex,
+  time::sleep,
+};
 use uid::Id;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -57,7 +60,7 @@ pub struct Response<'a> {
   content_type: String,
   data: Vec<u8>,
   headers: HashMap<String, &'a str>,
-  id: Id<Self>,
+  // id: Id<Self>,
 }
 
 impl<'a> Response<'a> {
@@ -67,7 +70,7 @@ impl<'a> Response<'a> {
       content_type: content_type.to_string(),
       data: Vec::new(),
       headers: HashMap::new(),
-      id: Id::new(),
+      // id: Id::new(),
     }
   }
 
@@ -159,7 +162,6 @@ impl Display for Request<'_> {
 }
 
 impl<'a> Request<'a> {
-  // TODO: make Request::parse return a result and include error codes
   pub fn parse(request: &'a [u8]) -> Result<Self, ResError> {
     let header_body_split = b"\r\n\r\n";
     let split_index = request
@@ -280,8 +282,6 @@ pub async fn respond(stream: Arc<Mutex<WriteHalf<'_>>>, mut res: Response<'_>) {
   data.extend_from_slice(&b"\r\n".to_vec());
   data.extend_from_slice(&res.data);
 
-  // println!("Res: {:?}", str::from_utf8(&mut data.clone()).unwrap());
-
   let _ = stream.write_all(&data).await;
   let _ = stream.flush().await;
 }
@@ -290,17 +290,26 @@ pub async fn respond(stream: Arc<Mutex<WriteHalf<'_>>>, mut res: Response<'_>) {
 pub struct WebrsHttp {
   api_methods: Vec<Arc<Mutex<dyn Method + Send + Sync>>>,
   port: u16,
-  compression: (bool /* zstd */, bool /* br */, bool /* gzip */),
-  content_dir: String
+  compression: (
+    bool, /* zstd */
+    bool, /* br */
+    bool, /* gzip */
+  ),
+  content_dir: String,
 }
 
 impl WebrsHttp {
-  pub fn new(api_methods: Vec<Arc<Mutex<dyn Method + Send + Sync>>>, port: u16, compression: (bool, bool, bool), content_dir: String) -> Arc<Self>{
+  pub fn new(
+    api_methods: Vec<Arc<Mutex<dyn Method + Send + Sync>>>,
+    port: u16,
+    compression: (bool, bool, bool),
+    content_dir: String,
+  ) -> Arc<Self> {
     Arc::new(Self {
       api_methods,
       port,
       compression,
-      content_dir
+      content_dir,
     })
   }
 
@@ -308,15 +317,15 @@ impl WebrsHttp {
     if let Err(_) = std::env::var("SERVER_LOG") {
       std::env::set_var("SERVER_LOG", "info");
     }
-  
+
     pretty_env_logger::formatted_timed_builder()
       .parse_env("SERVER_LOG")
       .format_timestamp_millis()
       .init();
-  
+
     let listener = TcpListener::bind(format!("0.0.0.0:{}", self.port)).await?;
     info!("Started listening on port {}", self.port);
-  
+
     while let Ok((s, a)) = listener.accept().await {
       let clone = Arc::clone(&self);
 
@@ -324,14 +333,18 @@ impl WebrsHttp {
         let _ = clone.handle(s, a).await;
       });
     }
-  
+
     Ok(())
   }
 
-  async fn handle<'a>(&'a self, mut stream: TcpStream, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+  async fn handle<'a>(
+    &'a self,
+    mut stream: TcpStream,
+    addr: SocketAddr,
+  ) -> Result<(), Box<dyn std::error::Error>> {
     let (mut r_stream, w_stream) = stream.split();
     let w_stream = Arc::new(Mutex::new(w_stream));
-  
+
     loop {
       let mut raw: Vec<u8> = Vec::new();
       let mut buf: [u8; 4096] = [0; 4096];
@@ -349,10 +362,10 @@ impl WebrsHttp {
             break;
           }
         };
-  
+
         raw.extend_from_slice(&buf[..len]);
       }
-  
+
       let req: Request = match Request::parse(raw.as_slice()) {
         Ok(r) => r,
         Err(e) => {
@@ -364,9 +377,9 @@ impl WebrsHttp {
           continue;
         }
       };
-  
+
       let req_id = req.get_id();
-  
+
       info!(
         "[Request {}] from {}: {:?} {} HTTP/1.1",
         req_id,
@@ -374,16 +387,16 @@ impl WebrsHttp {
         req.get_type(),
         req.get_endpoint()
       );
-  
+
       let res = Handlers::handle_request(self, req.clone()).await;
-  
+
       if let Some(r) = res {
         respond(w_stream.clone(), r).await;
       } else {
         warn!("[Request {}] No response", req_id);
         respond(w_stream.clone(), Response::basic(400, "Bad Request")).await;
       }
-  
+
       if let Some(c) = req.get_headers().get("connection") {
         if c.to_ascii_lowercase() != "keep-alive" {
           trace!("[Request {}] Connection: {}", req_id, c);
@@ -394,9 +407,9 @@ impl WebrsHttp {
         break;
       }
     }
-  
+
     trace!("Connection to {} closed", addr.ip());
-  
+
     Ok(())
   }
 }

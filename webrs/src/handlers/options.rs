@@ -1,4 +1,4 @@
-use crate::{ReqTypes, Request, Response};
+use crate::{Request, Response};
 
 pub fn handle_options(_req: Request) -> Option<Response> {
   let mut res = Response::new(204, "No Content");

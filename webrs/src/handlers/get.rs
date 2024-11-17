@@ -48,7 +48,7 @@ pub fn handle_get<'a, 'b>(server: &'a WebrsHttp, req: Request<'b>) -> Option<Res
       let _ = f.read_to_end(&mut res_data);
 
       let req_id = req.get_id();
-      let final_data = Handlers::handle_compression(server ,req, res_data);
+      let final_data = Handlers::handle_compression(server, req, res_data);
 
       if final_data.1.is_some() {
         trace!(

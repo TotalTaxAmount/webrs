@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use log::{error, trace};
-use tokio::sync::Mutex;
 
 use crate::{handlers::options::handle_options, ReqTypes, Request, Response, WebrsHttp};
 
@@ -9,7 +6,10 @@ use crate::{handlers::options::handle_options, ReqTypes, Request, Response, Webr
 pub struct Api {}
 
 impl Api {
-  pub async fn handle_api_request<'s, 'r>(server: &'s WebrsHttp, req: Request<'r>) -> Option<Response<'r>> {
+  pub async fn handle_api_request<'s, 'r>(
+    server: &'s WebrsHttp,
+    req: Request<'r>,
+  ) -> Option<Response<'r>> {
     let endpoint = match req.get_endpoint().split_once("/api") {
       Some(s) if s.1 != "" => s.1,
       _ => {
@@ -38,11 +38,9 @@ impl Api {
           ReqTypes::GET => locked_m.handle_get(req.clone()),
           ReqTypes::POST => locked_m.handle_post(req.clone()),
           ReqTypes::OPTIONS => handle_options(req.clone()),
-          _ => Some(Response::basic(405, "Method Not Allowed")),
         };
 
         if res.is_some() {
-          
           return res;
         }
       }

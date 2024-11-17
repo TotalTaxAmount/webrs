@@ -1,10 +1,9 @@
-use std::{collections::HashMap, io::Read, sync::LazyLock};
+use std::{collections::HashMap, io::Read};
 
 use flate2::{bufread::GzEncoder, Compression};
 use get::handle_get;
-use log::{error, info, trace, warn};
+use log::{info, trace, warn};
 use options::handle_options;
-use tokio::sync::Mutex;
 
 use crate::{api::api::Api, Request, Response, WebrsHttp};
 
@@ -14,7 +13,11 @@ pub mod options;
 pub struct Handlers {}
 
 impl<'a> Handlers {
-  pub fn handle_compression(server: &WebrsHttp, req: Request<'a>, mut buf: Vec<u8>) -> (Vec<u8>, Option<&'a str>) {
+  pub fn handle_compression(
+    server: &WebrsHttp,
+    req: Request<'a>,
+    mut buf: Vec<u8>,
+  ) -> (Vec<u8>, Option<&'a str>) {
     if !req.get_headers().contains_key("accept-encoding") {
       info!(
         "[Request {}] Request does not support compression",
@@ -81,7 +84,7 @@ impl<'a> Handlers {
     (buf, algorithm)
   }
 
-  pub async fn handle_request<'r>(server: &WebrsHttp,req: Request<'r>) -> Option<Response<'r>> {
+  pub async fn handle_request<'r>(server: &WebrsHttp, req: Request<'r>) -> Option<Response<'r>> {
     if req.get_endpoint().starts_with("/api") {
       trace!("[Request {}] Passing to api", req.get_id());
 
