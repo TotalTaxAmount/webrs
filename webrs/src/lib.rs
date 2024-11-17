@@ -314,15 +314,6 @@ impl WebrsHttp {
   }
 
   pub async fn start(self: Arc<Self>) -> std::io::Result<()> {
-    if let Err(_) = std::env::var("SERVER_LOG") {
-      std::env::set_var("SERVER_LOG", "info");
-    }
-
-    pretty_env_logger::formatted_timed_builder()
-      .parse_env("SERVER_LOG")
-      .format_timestamp_millis()
-      .init();
-
     let listener = TcpListener::bind(format!("0.0.0.0:{}", self.port)).await?;
     info!("Started listening on port {}", self.port);
 
