@@ -47,23 +47,9 @@ pub fn handle_get<'a, 'b>(server: &'a WebrsHttp, req: Request<'b>) -> Option<Res
 
       let _ = f.read_to_end(&mut res_data);
 
-      let req_id = req.get_id();
-      let final_data = Handlers::handle_compression(server, req, res_data);
-
-      if final_data.1.is_some() {
-        trace!(
-          "[Request {}] Using '{}' compression",
-          req_id,
-          final_data.1.as_ref().unwrap()
-        );
-        res.add_header(
-          "content-encoding".to_string(),
-          final_data.1.as_ref().unwrap(),
-        );
-      }
       res.set_code(200);
       res.set_content_type(mime_type.to_string());
-      res.set_data(final_data.0);
+      res.set_data(res_data);
     }
     Err(_) => {
       error!("404 {} not found", path);
