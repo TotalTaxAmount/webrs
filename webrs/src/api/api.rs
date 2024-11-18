@@ -1,4 +1,4 @@
-use log::{error, trace};
+use log::trace;
 
 use crate::{handlers::options::handle_options, ReqTypes, Request, Response, WebrsHttp};
 
@@ -22,17 +22,7 @@ impl Api {
     let mut res: Option<Response>;
 
     for m in &server.api_methods {
-      let mut locked_m = match m.try_lock() {
-        Ok(m) => m,
-        Err(e) => {
-          error!(
-            "[Request {}] Failed to acquire lock on method: {}",
-            req.get_id(),
-            e
-          );
-          return None;
-        }
-      };
+      let mut locked_m = m.lock().await;
       if endpoint.starts_with(locked_m.get_endpoint()) {
         res = match req.get_type() {
           ReqTypes::GET => locked_m.handle_get(req.clone()),
