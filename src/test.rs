@@ -1,6 +1,11 @@
 #[cfg(test)]
 mod test {
-    use crate::{request::{ReqTypes, Request}, response::Response};
+    use std::sync::{Arc};
+
+    use async_trait::async_trait;
+    use tokio::sync::Mutex;
+
+    use crate::{api::ApiMethod, request::{ReqTypes, Request}, response::Response, server::WebrsHttp};
 
     #[tokio::test]
     async fn test_request_parse_valid() {
@@ -54,4 +59,36 @@ mod test {
             .unwrap()
             .contains("\"key\":\"value\""));
     }
-}
+
+    #[tokio::test]
+    async fn test_add_api() {
+      struct TestMethod {
+        test: u16
+      }
+
+      #[async_trait]
+      impl ApiMethod for TestMethod {
+        fn get_endpoint(&self) -> &str {
+          "/test"
+        }
+
+        async fn handle_get<'s, 'r>(&'s mut self, req: Request<'r>) -> Option<Response<'r>>
+        where
+            'r: 's {
+              None
+            }
+    
+        async fn handle_post<'s, 'r>(&'s mut self, req: Request<'r>) -> Option<Response<'r>>
+        where
+            'r: 's {
+              None
+            }
+      }
+
+      let method = TestMethod {
+        test: 0
+      };
+
+      let test_server = WebrsHttp::new(vec![Arc::new(Mutex::new(method))], 8080, (true, true, true), "".to_string());
+      test_server.start().await.unwrap();
+    }
