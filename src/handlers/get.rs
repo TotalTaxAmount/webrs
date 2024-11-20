@@ -1,20 +1,11 @@
 use std::{fs::File, io::Read};
 
-use log::{error, trace, warn};
+use log::error;
 
-use crate::{request::{ReqTypes, Request}, response::Response, server::WebrsHttp};
+use crate::{request::Request, response::Response, server::WebrsHttp};
 
 
 pub fn handle_get<'a, 'b>(server: &'a WebrsHttp, req: Request<'b>) -> Option<Response<'b>> {
-    if req.get_type() != ReqTypes::GET {
-        warn!(
-            "[Request {}] Request method is {:?} not GET",
-            req.get_id(),
-            req.get_type()
-        );
-        return None;
-    }
-
     let mut path: String = req.get_endpoint().to_string();
 
     if path.ends_with('/') {
