@@ -1,6 +1,11 @@
 use log::trace;
 
-use crate::{handlers::options::handle_options, request::{ReqTypes, Request}, response::Response, server::WebrsHttp};
+use crate::{
+    handlers::options::handle_options,
+    request::{ReqTypes, Request},
+    response::Response,
+    server::WebrsHttp,
+};
 
 #[derive(Clone)]
 pub struct Api {}

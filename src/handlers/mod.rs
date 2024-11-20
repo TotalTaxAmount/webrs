@@ -5,7 +5,12 @@ use get::handle_get;
 use log::{trace, warn};
 use options::handle_options;
 
-use crate::{api::api::Api, request::{ReqTypes, Request}, response::Response, server::WebrsHttp};
+use crate::{
+    api::api::Api,
+    request::{ReqTypes, Request},
+    response::Response,
+    server::WebrsHttp,
+};
 
 pub mod get;
 pub mod options;
@@ -108,7 +113,7 @@ impl<'a> Handlers {
         };
 
         if let Some(r) = res {
-          res = Some(Handlers::handle_compression(server, req, r));
+            res = Some(Handlers::handle_compression(server, req, r));
         }
 
         res

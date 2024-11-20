@@ -4,7 +4,6 @@ use log::error;
 
 use crate::{request::Request, response::Response, server::WebrsHttp};
 
-
 pub fn handle_get<'a, 'b>(server: &'a WebrsHttp, req: Request<'b>) -> Option<Response<'b>> {
     let mut path: String = req.get_endpoint().to_string();
 

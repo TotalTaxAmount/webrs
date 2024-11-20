@@ -1,15 +1,9 @@
 use core::str;
-use std::{
-    collections::HashMap, sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 use log::error;
 use serde_json::{to_string, Value};
-use tokio::{
-    io::AsyncWriteExt,
-    net::tcp::WriteHalf,
-    sync::Mutex,
-};
+use tokio::{io::AsyncWriteExt, net::tcp::WriteHalf, sync::Mutex};
 
 #[derive(Debug, Clone)]
 pub struct Response<'a> {

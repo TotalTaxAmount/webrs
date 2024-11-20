@@ -1,10 +1,13 @@
 use log::{info, trace, warn};
 
-use crate::{api::ApiMethod, handlers::Handlers, request::Request, response::{respond, Response}};
-
-use std::{
-    net::SocketAddr, process::exit, sync::Arc, time::Duration,
+use crate::{
+    api::ApiMethod,
+    handlers::Handlers,
+    request::Request,
+    response::{respond, Response},
 };
+
+use std::{net::SocketAddr, process::exit, sync::Arc, time::Duration};
 
 use tokio::{
     io::AsyncReadExt,
@@ -43,34 +46,38 @@ impl WebrsHttp {
     }
 
     pub fn get_compression(&self) -> (bool, bool, bool) {
-      self.compression
+        self.compression
     }
 
     pub fn get_content_dir(&self) -> String {
-      self.content_dir.clone()
+        self.content_dir.clone()
     }
 
     pub fn get_api_methods(&self) -> Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>> {
-      self.api_methods.clone()
+        self.api_methods.clone()
     }
 
     pub async fn start(self: Arc<Self>) -> std::io::Result<()> {
         let listener = TcpListener::bind(format!("0.0.0.0:{}", self.port)).await?;
         info!("Started listening on port {}", self.port);
 
-        while let Ok((s, a)) = listener.accept().await {
-            if !self.running {
-                break;
+        tokio::spawn(async move {
+            while let Ok((s, a)) = listener.accept().await {
+                if !self.running {
+                    break;
+                }
+                let clone = Arc::clone(&self);
+
+                tokio::spawn(async move {
+                    let _ = clone.handle(s, a).await;
+                });
             }
-            let clone = Arc::clone(&self);
 
-            tokio::spawn(async move {
-                let _ = clone.handle(s, a).await;
-            });
-        }
+            info!("Shutting down web server");
+            exit(0)
+        });
 
-        info!("Shutting down web server");
-        exit(0)
+        Ok(())
     }
 
     pub fn stop(&mut self) {
