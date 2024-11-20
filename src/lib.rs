@@ -2,9 +2,10 @@ pub mod api;
 pub mod handlers;
 
 use core::{fmt, str};
-use std::{collections::HashMap, fmt::Display, net::SocketAddr, sync::Arc, time::Duration};
+use std::{collections::HashMap, fmt::Display, net::SocketAddr, process::exit, sync::Arc, time::Duration};
 
-use api::Method;
+use api::ApiMethod;
+use brotli::enc::encode::set_parameter;
 use handlers::Handlers;
 use log::{error, info, trace, warn};
 use serde_json::{to_string, Value};
@@ -288,7 +289,7 @@ pub async fn respond(stream: Arc<Mutex<WriteHalf<'_>>>, mut res: Response<'_>) {
 
 #[derive(Clone)]
 pub struct WebrsHttp {
-  api_methods: Vec<Arc<Mutex<dyn Method + Send + Sync>>>,
+  api_methods: Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>>,
   port: u16,
   compression: (
     bool, /* zstd */
@@ -296,11 +297,12 @@ pub struct WebrsHttp {
     bool, /* gzip */
   ),
   content_dir: String,
+  running: bool
 }
 
 impl WebrsHttp {
   pub fn new(
-    api_methods: Vec<Arc<Mutex<dyn Method + Send + Sync>>>,
+    api_methods: Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>>,
     port: u16,
     compression: (bool, bool, bool),
     content_dir: String,
@@ -310,6 +312,7 @@ impl WebrsHttp {
       port,
       compression,
       content_dir,
+      running: true
     })
   }
 
@@ -318,6 +321,9 @@ impl WebrsHttp {
     info!("Started listening on port {}", self.port);
 
     while let Ok((s, a)) = listener.accept().await {
+      if !self.running {
+        break;
+      }
       let clone = Arc::clone(&self);
 
       tokio::spawn(async move {
@@ -325,7 +331,12 @@ impl WebrsHttp {
       });
     }
 
-    Ok(())
+    info!("Shutting down web server");
+    exit(0)
+  }
+
+  pub fn stop(&mut self) {
+    self.running = false;
   }
 
   async fn handle<'a>(
