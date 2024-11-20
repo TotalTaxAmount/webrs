@@ -92,3 +92,4 @@ mod test {
       let test_server = WebrsHttp::new(vec![Arc::new(Mutex::new(method))], 8080, (true, true, true), "".to_string());
       test_server.start().await.unwrap();
     }
+  }
