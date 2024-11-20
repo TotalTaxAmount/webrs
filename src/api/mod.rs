@@ -8,7 +8,7 @@ pub mod api;
 pub trait ApiMethod: Send + Sync {
     fn get_endpoint(&self) -> &str;
 
-    async fn handle_get<'s, 'r>(&'s self, req: Request<'r>) -> Option<Response<'r>>
+    async fn handle_get<'s, 'r>(&'s mut self, req: Request<'r>) -> Option<Response<'r>>
     where
         'r: 's;
 

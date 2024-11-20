@@ -2,7 +2,7 @@ use std::{collections::HashMap, io::Read};
 
 use flate2::{bufread::GzEncoder, Compression};
 use get::handle_get;
-use log::{info, trace, warn};
+use log::{trace, warn};
 use options::handle_options;
 
 use crate::{api::api::Api, request::{ReqTypes, Request}, response::Response, server::WebrsHttp};
@@ -19,7 +19,7 @@ impl<'a> Handlers {
         mut res: Response<'a>,
     ) -> Response<'a> {
         if !req.get_headers().contains_key("accept-encoding") {
-            info!(
+            trace!(
                 "[Request {}] Request does not support compression",
                 req.get_id()
             );
@@ -84,7 +84,7 @@ impl<'a> Handlers {
         }
 
         if algorithm.is_some() {
-            info!(
+            trace!(
                 "[Request {}] Request is using '{}' compression",
                 req.get_id(),
                 algorithm.unwrap()
@@ -107,7 +107,9 @@ impl<'a> Handlers {
             }
         };
 
-        res = Some(Handlers::handle_compression(server, req, res.unwrap()));
+        if let Some(r) = res {
+          res = Some(Handlers::handle_compression(server, req, r));
+        }
 
         res
     }
