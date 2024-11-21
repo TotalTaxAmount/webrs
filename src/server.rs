@@ -73,7 +73,6 @@ impl WebrsHttp {
     }
 
     info!("Shutting down web server");
-    exit(0);
   }
 
   pub async fn stop(&self) {
