@@ -95,11 +95,13 @@ mod test {
         let method = TestMethod { test: 0 };
 
         let test_server = WebrsHttp::new(
-            vec![Arc::new(Mutex::new(method))],
             8080,
             (true, true, true),
             "".to_string(),
         );
-        test_server.start().await.unwrap();
+
+        test_server.register_method(Arc::new(Mutex::new(method))).await;
+        test_server.clone().start().await.unwrap();
+        test_server.stop().await;
     }
 }

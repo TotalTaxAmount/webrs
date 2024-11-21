@@ -7,7 +7,7 @@ use crate::{
     response::{respond, Response},
 };
 
-use std::{net::SocketAddr, process::exit, sync::Arc, time::Duration};
+use std::{net::SocketAddr, process::exit, sync::Arc, thread::AccessError, time::Duration};
 
 use tokio::{
     io::AsyncReadExt,
@@ -18,7 +18,7 @@ use tokio::{
 
 #[derive(Clone)]
 pub struct WebrsHttp {
-    api_methods: Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>>,
+    api_methods: Arc<Mutex<Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>>>>,
     port: u16,
     compression: (
         bool, /* zstd */
@@ -26,22 +26,21 @@ pub struct WebrsHttp {
         bool, /* gzip */
     ),
     content_dir: String,
-    running: bool,
+    running: Arc<Mutex<bool>>,
 }
 
 impl WebrsHttp {
     pub fn new(
-        api_methods: Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>>,
         port: u16,
         compression: (bool, bool, bool),
         content_dir: String,
     ) -> Arc<Self> {
         Arc::new(Self {
-            api_methods,
+            api_methods: Arc::new(Mutex::new(Vec::new())),
             port,
             compression,
             content_dir,
-            running: true,
+            running: Arc::new(Mutex::new(true)),
         })
     }
 
@@ -53,8 +52,13 @@ impl WebrsHttp {
         self.content_dir.clone()
     }
 
-    pub fn get_api_methods(&self) -> Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>> {
-        self.api_methods.clone()
+    pub async fn get_api_methods(&self) -> Vec<Arc<Mutex<dyn ApiMethod + Send + Sync>>> {
+        self.api_methods.lock().await.clone()
+    }
+
+    pub async fn register_method(&self, method: Arc<Mutex<dyn ApiMethod + Send + Sync>>) {
+      let mut methods = self.api_methods.lock().await;
+      methods.push(method);
     }
 
     pub async fn start(self: Arc<Self>) -> std::io::Result<()> {
@@ -63,10 +67,10 @@ impl WebrsHttp {
 
         tokio::spawn(async move {
             while let Ok((s, a)) = listener.accept().await {
-                if !self.running {
+                if !*self.running.lock().await {
                     break;
                 }
-                let clone = Arc::clone(&self);
+                let clone = self.clone();
 
                 tokio::spawn(async move {
                     let _ = clone.handle(s, a).await;
@@ -80,8 +84,9 @@ impl WebrsHttp {
         Ok(())
     }
 
-    pub fn stop(&mut self) {
-        self.running = false;
+    pub async fn stop(&self) {
+      let mut running = self.running.lock().await;
+      *running = false;
     }
 
     async fn handle<'a>(

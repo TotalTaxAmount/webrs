@@ -26,7 +26,7 @@ impl Api {
 
         let mut res: Option<Response>;
 
-        for m in &server.get_api_methods() {
+        for m in &server.get_api_methods().await {
             let mut locked_m = m.lock().await;
             if endpoint.starts_with(locked_m.get_endpoint()) {
                 res = match req.get_type() {
