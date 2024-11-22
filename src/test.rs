@@ -96,10 +96,11 @@ mod test {
 
         let test_server = WebrsHttp::new(
             vec![Arc::new(Mutex::new(method))],
-            8080,
+            8081,
             (true, true, true),
             "".to_string(),
         );
         test_server.start().await.unwrap();
+        assert_eq!(true, false);
     }
 }
