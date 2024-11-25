@@ -7,25 +7,13 @@ use crate::{request::Request, response::Response, server::WebrsHttp};
 pub fn handle_get<'a, 'b>(server: &'a WebrsHttp, req: Request<'b>) -> Option<Response<'b>> {
   let mut path: String = req.get_endpoint().to_string();
 
-  if path.ends_with('/') {
-    path.push_str("index");
-  }
+  if path.ends_with('/') { path.push_str("index"); }
+  if !path.contains('.') { path.push_str(".html"); }
 
-  let content_type = if let Some(dot_pos) = path.rfind('.') {
-    &path[(dot_pos + 1)..]
-  } else {
-    "html"
-  };
-  let f_name = format!(
-    "{}.{}",
-    &path[0..path.find(".").unwrap_or(path.len())],
-    content_type
-  );
-
-  let mut f = File::open(format!("./{}/{}", server.get_content_dir(), f_name));
+  let mut f = File::open(format!("./{}/{}", server.get_content_dir(), path));
   let mut res = Response::new(200, "text/html");
 
-  let mime_type = Box::leak(match mime_guess::from_path(f_name.clone()).first() {
+  let mime_type = Box::leak(match mime_guess::from_path(path.clone()).first() {
     Some(t) => t.essence_str().to_string().into_boxed_str(),
     None => "text/plain".to_string().into_boxed_str(),
   });
