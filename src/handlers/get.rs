@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 
-use log::error;
+use log::{error, trace};
 
 use crate::{request::Request, response::Response, server::WebrsHttp};
 
@@ -10,7 +10,9 @@ pub fn handle_get<'a, 'b>(server: &'a WebrsHttp, req: Request<'b>) -> Option<Res
   if path.ends_with('/') { path.push_str("index"); }
   if !path.contains('.') { path.push_str(".html"); }
 
-  let mut f = File::open(format!("./{}/{}", server.get_content_dir(), path));
+  let local_path = format!("./{}/{}", server.get_content_dir(), path);
+  trace!("path: {}", local_path);
+  let mut f = File::open(local_path);
   let mut res = Response::new(200, "text/html");
 
   let mime_type = Box::leak(match mime_guess::from_path(path.clone()).first() {
